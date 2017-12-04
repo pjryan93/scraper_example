@@ -6,8 +6,6 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from django import template
 from django.shortcuts import render
-
-
 from bs4 import BeautifulSoup
 from urlparse import urlparse
 import urllib2
@@ -18,7 +16,6 @@ import urllib, cStringIO
 import json
 
 register = template.Library()
-
 
 def getImages(self,buff1):
 	soup = BeautifulSoup(buff1)
@@ -55,6 +52,8 @@ class ExtractView(TemplateView):
 
 		if request.is_ajax():
 
+			context = dict()
+
 			urlText = request.POST["url-search"]
 
 			headers={'User-Agent': 'Chrome/41.0.2228.0 Safari/537.36'}
@@ -64,14 +63,10 @@ class ExtractView(TemplateView):
 			html = session.get(urlText,headers=headers,cookies=cookies).text
 			extracted = extraction.Extractor().extract(html, source_url=urlText)
 
-			context = dict()
-			images = []
+			images = [img for img in extracted.images]
 
 			parsed_uri = urlparse(urlText)
 			domain = '{uri.scheme}://{uri.netloc}/'.format(uri=parsed_uri)
-
-			for image in extracted.images:
-				images.append(image)
 
 			if "authors" in extracted._unexpected_values:
 				context["author"] = extracted._unexpected_values["authors"][0]
@@ -83,7 +78,8 @@ class ExtractView(TemplateView):
 			image_groupA = filter(lambda pic: pic.startswith('data') == False , filimage)
 			image_groupB = filter(lambda pic: pic.startswith('data') == False, extracted.images)
 
-			filteredImages =image_groupA + image_groupB
+			#combine lists
+			filteredImages = image_groupA + image_groupB
 
 			#check duplicate
 			cleanedImages =  list(filteredImages)
